@@ -1,0 +1,27 @@
+# Ignore SQLite database
+*.db
+
+# Ignore compiled binaries
+*.exe
+*.out
+*.o
+*.obj
+
+# CMake and build folders
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+build/
+
+
+
+# IDE folders
+.vscode/
+.idea/
+*.swp
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
