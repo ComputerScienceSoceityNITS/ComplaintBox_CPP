@@ -1,7 +1,5 @@
 #include<bits/stdc++.h>
-#include <iostream>
 #include "sqlite3.h"
-#include <string>
 using namespace std;
 
 class ComplaintBox {
