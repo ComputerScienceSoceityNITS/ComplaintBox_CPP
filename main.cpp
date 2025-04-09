@@ -127,14 +127,17 @@ private:
 int main()
 {
     ComplaintBox cb;
-    int choice;
+    string choice;
+    int choiceNum = 0;
 
     do
     {
         cout << "\n1. Register User\n2. Register Admin\n3. User Login\n4. Admin Login\n5. File Complaint\n6. Exit\nChoice: ";
         cin >> choice;
 
-        switch (choice)
+        try {
+            choiceNum = stoi(choice); 
+        switch (choiceNum)
         {
         case 1:
             cb.registerUser();
@@ -157,7 +160,10 @@ int main()
         default:
             cout << "Invalid choice!\n";
         }
-    } while (choice != 6);
+    } catch (exception& e) {  // stoi throw an exception when input is non-numeric string
+        cout << "Invalid input! Please enter a number."<<endl; 
+    }
+}while (choiceNum != 6);
 
     return 0;
 }
