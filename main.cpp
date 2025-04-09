@@ -104,7 +104,8 @@ public:
         }
         else
         {
-            cout << "Complaint filed successfully!\n";
+            int lastID = sqlite3_last_insert_rowid(db); // get complaintID
+            cout << "Complaint filed successfully! Your Complaint ID is: " << lastID << endl; // print complaintID
         }
     }
 
@@ -116,8 +117,8 @@ private:
     {
         string sqlUsers = "CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT);";
         string sqlAdmins = "CREATE TABLE IF NOT EXISTS adminusers (username TEXT PRIMARY KEY, password TEXT);";
-        string sqlComplaints = "CREATE TABLE IF NOT EXISTS complaints (category TEXT, subCategory TEXT, message TEXT);";
-
+        string sqlComplaints = "CREATE TABLE IF NOT EXISTS complaints (category TEXT, subCategory TEXT, message TEXT, complaintID INTEGER PRIMARY KEY AUTOINCREMENT);";
+                                                                                                                  // added complaintID with AUTOINCREMENT
         sqlite3_exec(db, sqlUsers.c_str(), 0, 0, &errMsg);
         sqlite3_exec(db, sqlAdmins.c_str(), 0, 0, &errMsg);
         sqlite3_exec(db, sqlComplaints.c_str(), 0, 0, &errMsg);
