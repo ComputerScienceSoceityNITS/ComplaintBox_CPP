@@ -116,7 +116,11 @@ private:
     {
         string sqlUsers = "CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT);";
         string sqlAdmins = "CREATE TABLE IF NOT EXISTS adminusers (username TEXT PRIMARY KEY, password TEXT);";
-        string sqlComplaints = "CREATE TABLE IF NOT EXISTS complaints (category TEXT, subCategory TEXT, message TEXT);";
+        string sqlComplaints = "CREATE TABLE IF NOT EXISTS complaints ("
+        "complaint_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "category TEXT, "
+        "subCategory TEXT, "
+        "message TEXT);";
 
         sqlite3_exec(db, sqlUsers.c_str(), 0, 0, &errMsg);
         sqlite3_exec(db, sqlAdmins.c_str(), 0, 0, &errMsg);
