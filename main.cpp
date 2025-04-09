@@ -1,110 +1,103 @@
-#include<bits/stdc++.h>
+#include <bits/stdc++.h>
 #include "sqlite3.h"
 using namespace std;
 
-class ComplaintBox
-{
+// ANSI escape color codes
+#define RESET       "\033[0m"
+#define RED         "\033[31m"
+#define GREEN       "\033[32m"
+#define YELLOW      "\033[33m"
+#define PURPLE      "\033[35m"
+#define CYAN        "\033[36m"
+#define WHITE       "\033[37m"
+#define BOLDVIOLET  "\033[1;35m"
+#define BOLDGREEN   "\033[1;32m"
+#define BOLDRED     "\033[1;31m"
+
+class ComplaintBox {
 public:
-    ComplaintBox()
-    {
+    ComplaintBox() {
         sqlite3_open("complaints.db", &db);
         createTables();
     }
 
-    ~ComplaintBox()
-    {
+    ~ComplaintBox() {
         sqlite3_close(db);
     }
 
-    void registerUser(bool isAdmin = false)
-    {
+    void registerUser(bool isAdmin = false) {
         string uname, pass;
-        cout << "Enter username: ";
+        cout << PURPLE << "Enter username: " << RESET;
         cin >> uname;
-
-        // --To check duplicate Username while Registering--
 
         string checkSql = "SELECT * FROM users WHERE username='" + uname + "';";
         bool exists = false;
 
-        sqlite3_exec(db, checkSql.c_str(), [](void *data, int, char **, char **) -> int
-                     {
-            *(bool *)data = true;    // same func as in loginUser
-            return 0; }, &exists, &errMsg);
-        
-        if (exists)
-        {
-            cout << "Username already exists. Please choose a different Username" << endl;
+        sqlite3_exec(db, checkSql.c_str(), [](void *data, int, char **, char **) -> int {
+            *(bool *)data = true;
+            return 0;
+        }, &exists, &errMsg);
+
+        if (exists) {
+            cout << BOLDRED << "Username already exists. Please choose a different Username.\n" << RESET;
             return;
         }
-        
-        // if not exists then continue
-        cout << "Enter password: ";
+
+        cout << PURPLE << "Enter password: " << RESET;
         cin >> pass;
 
         string table = isAdmin ? "adminusers" : "users";
         string sql = "INSERT INTO " + table + " (username, password) VALUES ('" + uname + "', '" + pass + "');";
 
-        if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK)
-        {
-            cout << "Error: " << errMsg << endl;
+        if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
+            cout << RED << "Error: " << errMsg << RESET << endl;
             sqlite3_free(errMsg);
-        }
-        else
-        {
-            cout << "Registration successful!\n";
+        } else {
+            cout << BOLDGREEN << "Registration successful!\n" << RESET;
         }
     }
 
-    bool loginUser(bool isAdmin = false)
-    {
+    bool loginUser(bool isAdmin = false) {
         string uname, pass;
-        cout << "Enter username: ";
+        cout << CYAN << "Enter username: " << RESET;
         cin >> uname;
-        cout << "Enter password: ";
+        cout << CYAN << "Enter password: " << RESET;
         cin >> pass;
 
         string table = isAdmin ? "adminusers" : "users";
         string sql = "SELECT * FROM " + table + " WHERE username = '" + uname + "' AND password = '" + pass + "';";
         bool success = false;
 
-        sqlite3_exec(db, sql.c_str(), [](void *successPtr, int argc, char **argv, char **colName) -> int
-                     {
+        sqlite3_exec(db, sql.c_str(), [](void *successPtr, int, char **, char **) -> int {
             *(bool*)successPtr = true;
-            return 0; }, &success, &errMsg);
+            return 0;
+        }, &success, &errMsg);
 
-        if (success)
-        {
-            cout << "Login successful!\n";
+        if (success) {
+            cout << GREEN << "Login successful!\n" << RESET;
             return true;
-        }
-        else
-        {
-            cout << "Invalid credentials!\n";
+        } else {
+            cout << RED << "Invalid credentials!\n" << RESET;
             return false;
         }
     }
 
-    void fileComplaint()
-    {
+    void fileComplaint() {
         string category, subCategory, message;
-        cout << "Enter category: ";
+        cout << YELLOW << "Enter category: " << RESET;
         cin.ignore();
         getline(cin, category);
-        cout << "Enter sub-category: ";
+        cout << YELLOW << "Enter sub-category: " << RESET;
         getline(cin, subCategory);
-        cout << "Enter complaint message: ";
+        cout << YELLOW << "Enter complaint message: " << RESET;
         getline(cin, message);
 
         string sql = "INSERT INTO complaints (category, subCategory, message) VALUES ('" + category + "', '" + subCategory + "', '" + message + "');";
-        if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK)
-        {
-            cout << "Error: " << errMsg << endl;
+        if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
+            cout << RED << "Error: " << errMsg << RESET << endl;
             sqlite3_free(errMsg);
-        }
-        else
-        {
-            cout << "Complaint filed successfully!\n";
+        } else {
+            cout << BOLDGREEN << "Complaint filed successfully!\n" << RESET;
         }
     }
 
@@ -112,8 +105,7 @@ private:
     sqlite3 *db;
     char *errMsg;
 
-    void createTables()
-    {
+    void createTables() {
         string sqlUsers = "CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT);";
         string sqlAdmins = "CREATE TABLE IF NOT EXISTS adminusers (username TEXT PRIMARY KEY, password TEXT);";
         string sqlComplaints = "CREATE TABLE IF NOT EXISTS complaints ("
@@ -128,38 +120,42 @@ private:
     }
 };
 
-int main()
-{
+int main() {
     ComplaintBox cb;
     int choice;
 
-    do
-    {
-        cout << "\n1. Register User\n2. Register Admin\n3. User Login\n4. Admin Login\n5. File Complaint\n6. Exit\nChoice: ";
+    do {
+        cout << BOLDVIOLET << "\n==== Complaint Box Menu ====\n" << RESET;
+        cout << CYAN << "1. Register User\n"
+             << "2. Register Admin\n"
+             << "3. User Login\n"
+             << "4. Admin Login\n"
+             << "5. File Complaint\n"
+             << "6. Exit\n" << RESET;
+        cout << WHITE << "Choice: " << RESET;
         cin >> choice;
 
-        switch (choice)
-        {
-        case 1:
-            cb.registerUser();
-            break;
-        case 2:
-            cb.registerUser(true);
-            break;
-        case 3:
-            cb.loginUser();
-            break;
-        case 4:
-            cb.loginUser(true);
-            break;
-        case 5:
-            cb.fileComplaint();
-            break;
-        case 6:
-            cout << "Exiting..." << endl;
-            break;
-        default:
-            cout << "Invalid choice!\n";
+        switch (choice) {
+            case 1:
+                cb.registerUser();
+                break;
+            case 2:
+                cb.registerUser(true);
+                break;
+            case 3:
+                cb.loginUser();
+                break;
+            case 4:
+                cb.loginUser(true);
+                break;
+            case 5:
+                cb.fileComplaint();
+                break;
+            case 6:
+                cout << BOLDGREEN << "Exiting..." << RESET << endl;
+                break;
+            default:
+                cout << BOLDRED << "Invalid choice!\n" << RESET;
         }
     } while (choice != 6);
 
