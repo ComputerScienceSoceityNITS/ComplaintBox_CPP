@@ -4,7 +4,8 @@ using namespace std;
 
 int main() {
     ComplaintBox cb;
-    int choice;
+    string choice;
+    int choiceNum = 0;
 
     do {
         cout << BOLDVIOLET << "\n==== Complaint Box Menu ====\n" << RESET;
@@ -20,35 +21,67 @@ int main() {
         cout << WHITE << "Choice: " << RESET;
         cin >> choice;
 
-        switch (choice) {
-            case 1:
-                cb.registerUser();
-                break;
-            case 2:
-                cb.registerUser(true);
-                break;
-            case 3:
-                cb.loginUser();
-                break;
-            case 4:
-                cb.loginUser(true);
-                break;
-            case 5:
-                cb.fileComplaint();
-                break;
-            case 6:
-                cb.exportComplaintsToCSV();
-                break;
-            case 7:
-                cb.searchComplaints();
-                break;
-            case 8:
-                cout << BOLDGREEN << "Exiting..." << RESET << endl;
-                break;
-            default:
-                cout << BOLDRED << "Invalid choice!\n" << RESET;
+// <<<<<<< Fix/crash-main-menu
+        try {
+            choiceNum = stoi(choice); 
+        switch (choiceNum)
+        {
+        case 1:
+            cb.registerUser();
+            break;
+        case 2:
+            cb.registerUser(true);
+            break;
+        case 3:
+            cb.loginUser();
+            break;
+        case 4:
+            cb.loginUser(true);
+            break;
+        case 5:
+            cb.fileComplaint();
+            break;
+        case 6:
+            cout << "Exiting..." << endl;
+            break;
+        default:
+            cout << "Invalid choice!\n";
         }
-    } while (choice != 8);
+    } catch (exception& e) {  // stoi throw an exception when input is non-numeric string
+        cout << "Invalid input! Please enter a number."<<endl; 
+    }
+}while (choiceNum != 6);
+// =======
+//         switch (choice) {
+//             case 1:
+//                 cb.registerUser();
+//                 break;
+//             case 2:
+//                 cb.registerUser(true);
+//                 break;
+//             case 3:
+//                 cb.loginUser();
+//                 break;
+//             case 4:
+//                 cb.loginUser(true);
+//                 break;
+//             case 5:
+//                 cb.fileComplaint();
+//                 break;
+//             case 6:
+//                 cb.exportComplaintsToCSV();
+//                 break;
+//             case 7:
+//                 cb.searchComplaints();
+//                 break;
+//             case 8:
+//                 cout << BOLDGREEN << "Exiting..." << RESET << endl;
+//                 break;
+//             default:
+//                 cout << BOLDRED << "Invalid choice!\n" << RESET;
+//         }
+//     } while (choice != 8);
+// >>>>>>> main
 
     return 0;
 }
