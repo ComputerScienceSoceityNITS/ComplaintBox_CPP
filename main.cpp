@@ -8,15 +8,18 @@ int main() {
 
     do {
         cout << BOLDVIOLET << "\n==== Complaint Box Menu ====\n" << RESET;
-        cout << CYAN << "1. Register User\n"
+        cout << CYAN
+             << "1. Register User\n"
              << "2. Register Admin\n"
              << "3. User Login\n"
              << "4. Admin Login\n"
              << "5. File Complaint\n"
              << "6. Export Complaints to CSV\n"
              << "7. Search Complaints\n"
-             << "8. Exit\n" << RESET;
-            
+             << "8. Update Complaint Status (Admin Only)\n"
+             << "9. Exit\n"
+             << RESET;
+
         cout << WHITE << "Choice: " << RESET;
         cin >> choice;
 
@@ -42,13 +45,24 @@ int main() {
             case 7:
                 cb.searchComplaints();
                 break;
-            case 8:
+            case 8: {
+                int id;
+                string status;
+                cout << YELLOW << "Enter Complaint ID to update: " << RESET;
+                cin >> id;
+                cout << YELLOW << "Enter new status (Pending/In Progress/Resolved): " << RESET;
+                cin.ignore();
+                getline(cin, status);
+                cb.updateComplaintStatus(id, status);
+                break;
+            }
+            case 9:
                 cout << BOLDGREEN << "Exiting..." << RESET << endl;
                 break;
             default:
                 cout << BOLDRED << "Invalid choice!\n" << RESET;
         }
-    } while (choice != 8);
+    } while (choice != 9);
 
     return 0;
 }
