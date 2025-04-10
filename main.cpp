@@ -101,6 +101,38 @@ public:
         }
     }
 
+    void exportComplaintsToCSV() {
+        ofstream file("complaints_export.csv");
+        if (!file.is_open()) {
+            cout << RED << "Failed to create CSV file.\n" << RESET;
+            return;
+        }
+    
+        // Write header with the column names in order
+        file << "complaint_id,category,subCategory,message\n";
+    
+        // Explicitly specify the columns to get the correct order.
+        string sql = "SELECT complaint_id, category, subCategory, message FROM complaints;";
+        auto callback = [](void *data, int argc, char **argv, char **colName) -> int {
+            ofstream *f = static_cast<ofstream *>(data);
+            for (int i = 0; i < argc; i++) {
+                *f << (argv[i] ? argv[i] : "") << (i < argc - 1 ? "," : "\n");
+            }
+            return 0;
+        };
+    
+        if (sqlite3_exec(db, sql.c_str(), callback, &file, &errMsg) != SQLITE_OK) {
+            cout << RED << "Export failed: " << errMsg << RESET << endl;
+            sqlite3_free(errMsg);
+        } else {
+            cout << BOLDGREEN << "Complaints exported to 'complaints_export.csv'!\n" << RESET;
+        }
+    
+        file.close();
+    }
+    
+    
+
 private:
     sqlite3 *db;
     char *errMsg;
@@ -131,7 +163,9 @@ int main() {
              << "3. User Login\n"
              << "4. Admin Login\n"
              << "5. File Complaint\n"
-             << "6. Exit\n" << RESET;
+             << "6. Export Complaints to CSV\n"
+             << "7. Exit\n" << RESET;
+            
         cout << WHITE << "Choice: " << RESET;
         cin >> choice;
 
@@ -152,12 +186,15 @@ int main() {
                 cb.fileComplaint();
                 break;
             case 6:
+                cb.exportComplaintsToCSV();
+                break;
+            case 7:
                 cout << BOLDGREEN << "Exiting..." << RESET << endl;
                 break;
             default:
                 cout << BOLDRED << "Invalid choice!\n" << RESET;
         }
-    } while (choice != 6);
+    } while (choice != 7);
 
     return 0;
 }
