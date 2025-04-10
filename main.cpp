@@ -101,6 +101,36 @@ public:
         }
     }
 
+    // New function: Search complaints based on a keyword
+    void searchComplaints() {
+        string keyword;
+        cout << YELLOW << "Enter keyword to search for: " << RESET;
+        cin.ignore();
+        getline(cin, keyword);
+
+        // Build the SQL query to filter complaints using LIKE
+        // Using wildcards %keyword% for category, subCategory, and message
+        string sql = "SELECT complaint_id, category, subCategory, message FROM complaints "
+                     "WHERE category LIKE '%" + keyword + "%' OR "
+                     "subCategory LIKE '%" + keyword + "%' OR "
+                     "message LIKE '%" + keyword + "%';";
+    
+        cout << CYAN << "\nSearch Results:\n" << RESET;
+        auto callback = [](void *data, int argc, char **argv, char **colName) -> int {
+            // Print the row with each column separated by a tab or comma
+            for (int i = 0; i < argc; i++) {
+                cout << (colName[i] ? colName[i] : "") << ": " << (argv[i] ? argv[i] : "NULL") << "  ";
+            }
+            cout << "\n";
+            return 0;
+        };
+
+        if (sqlite3_exec(db, sql.c_str(), callback, 0, &errMsg) != SQLITE_OK) {
+            cout << RED << "Search failed: " << errMsg << RESET << endl;
+            sqlite3_free(errMsg);
+        }
+    }
+
     void exportComplaintsToCSV() {
         ofstream file("complaints_export.csv");
         if (!file.is_open()) {
@@ -108,10 +138,9 @@ public:
             return;
         }
     
-        // Write header with the column names in order
-        file << "complaint_id,category,subCategory,message\n";
+        file << "complaint_id,category,subCategory,message\n";  // header
     
-        // Explicitly specify the columns to get the correct order.
+        // Explicitly select columns to ensure proper ordering
         string sql = "SELECT complaint_id, category, subCategory, message FROM complaints;";
         auto callback = [](void *data, int argc, char **argv, char **colName) -> int {
             ofstream *f = static_cast<ofstream *>(data);
@@ -130,8 +159,6 @@ public:
     
         file.close();
     }
-    
-    
 
 private:
     sqlite3 *db;
@@ -141,10 +168,10 @@ private:
         string sqlUsers = "CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT);";
         string sqlAdmins = "CREATE TABLE IF NOT EXISTS adminusers (username TEXT PRIMARY KEY, password TEXT);";
         string sqlComplaints = "CREATE TABLE IF NOT EXISTS complaints ("
-        "complaint_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-        "category TEXT, "
-        "subCategory TEXT, "
-        "message TEXT);";
+                                "complaint_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                                "category TEXT, "
+                                "subCategory TEXT, "
+                                "message TEXT);";
 
         sqlite3_exec(db, sqlUsers.c_str(), 0, 0, &errMsg);
         sqlite3_exec(db, sqlAdmins.c_str(), 0, 0, &errMsg);
@@ -164,7 +191,8 @@ int main() {
              << "4. Admin Login\n"
              << "5. File Complaint\n"
              << "6. Export Complaints to CSV\n"
-             << "7. Exit\n" << RESET;
+             << "7. Search Complaints\n"
+             << "8. Exit\n" << RESET;
             
         cout << WHITE << "Choice: " << RESET;
         cin >> choice;
@@ -189,12 +217,15 @@ int main() {
                 cb.exportComplaintsToCSV();
                 break;
             case 7:
+                cb.searchComplaints();
+                break;
+            case 8:
                 cout << BOLDGREEN << "Exiting..." << RESET << endl;
                 break;
             default:
                 cout << BOLDRED << "Invalid choice!\n" << RESET;
         }
-    } while (choice != 7);
+    } while (choice != 8);
 
     return 0;
 }
