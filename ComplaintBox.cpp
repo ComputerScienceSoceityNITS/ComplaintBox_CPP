@@ -56,7 +56,8 @@ void ComplaintBox::createTables() {
     "subCategory TEXT, "
     "message TEXT, "
     "status TEXT DEFAULT 'Pending', "
-    "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);";
+    "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, "
+    "notified INTEGER DEFAULT 0);";
 
     sqlite3_exec(db, sqlUsers.c_str(), 0, 0, &errMsg);
     sqlite3_exec(db, sqlAdmins.c_str(), 0, 0, &errMsg);
@@ -125,7 +126,26 @@ bool ComplaintBox::loginUser(bool isAdmin) {
 
     if (success) {
         cout << GREEN << "Login successful!\n" << RESET;
-        admin_logged_in = isAdmin;  
+        admin_logged_in = isAdmin;
+
+        if (isAdmin) {
+            const char* countSQL = "SELECT COUNT(*) FROM complaints WHERE notified = 0;";
+            int newComplaints = 0;
+            sqlite3_exec(db, countSQL, [](void* data, int argc, char** argv, char**) -> int {
+                *(int*)data = atoi(argv[0]);
+                return 0;
+            }, &newComplaints, &errMsg);
+
+            if (newComplaints > 0) {
+                cout << YELLOW << "You have " << newComplaints << " new complaint(s)!\n" << RESET;
+
+                const char* updateSQL = "UPDATE complaints SET notified = 1 WHERE notified = 0;";
+                sqlite3_exec(db, updateSQL, 0, 0, &errMsg);
+            } else {
+                cout << GREEN << "No new complaints since your last login.\n" << RESET;
+            }
+        }
+
         return true;
     } else {
         cout << RED << "Invalid credentials!\n" << RESET;
