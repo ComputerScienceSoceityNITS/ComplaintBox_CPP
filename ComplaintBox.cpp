@@ -4,8 +4,27 @@
 #include <sstream>
 #include <bits/stdc++.h> 
 #include <openssl/sha.h>
+#include <conio.h>
 
 using namespace std;
+
+string getHiddenPassword() {
+    string pass;
+    char ch;
+    while ((ch = _getch()) != '\r') { // Enter key
+        if (ch == '\b') { // Backspace
+            if (!pass.empty()) {
+                cout << "\b \b";
+                pass.pop_back();
+            }
+        } else {
+            pass += ch;
+            cout << '*';
+        }
+    }
+    cout << endl;
+    return pass;
+}
 
 string hashPassword(const string& password) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -32,10 +51,12 @@ void ComplaintBox::createTables() {
     string sqlUsers = "CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT);";
     string sqlAdmins = "CREATE TABLE IF NOT EXISTS adminusers (username TEXT PRIMARY KEY, password TEXT);";
     string sqlComplaints = "CREATE TABLE IF NOT EXISTS complaints ("
-                           "complaint_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                           "category TEXT, "
-                           "subCategory TEXT, "
-                           "message TEXT);";
+                            "complaint_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            "category TEXT, "
+                            "subCategory TEXT, "
+                            "message TEXT, "
+                            "status TEXT DEFAULT 'Pending');";
+
 
     sqlite3_exec(db, sqlUsers.c_str(), 0, 0, &errMsg);
     sqlite3_exec(db, sqlAdmins.c_str(), 0, 0, &errMsg);
@@ -43,7 +64,7 @@ void ComplaintBox::createTables() {
 }
 
 void ComplaintBox::registerUser(bool isAdmin) {
-    string uname, pass;
+    string uname;
     cout << PURPLE << "Enter username: " << RESET;
     cin >> uname;
 
@@ -61,13 +82,21 @@ void ComplaintBox::registerUser(bool isAdmin) {
     }
 
     cout << PURPLE << "Enter password: " << RESET;
-    cin >> pass;
+    string pass1 = getHiddenPassword();
+
+    cout << PURPLE << "Confirm password: " << RESET;
+    string pass2 = getHiddenPassword();
+
+    if (pass1 != pass2) {
+        cout << RED << "Passwords do not match. Registration failed.\n" << RESET;
+        return;
+    }
 
     string table = isAdmin ? "adminusers" : "users";
-    string hashedPass = hashPassword(pass);
-    string sql = "INSERT INTO " + table + " (username, password) VALUES ('" + uname + "', '" + hashedPass + "');";       
+    string hashedPass = hashPassword(pass1);
+    string insertSql = "INSERT INTO " + table + " (username, password) VALUES ('" + uname + "', '" + hashedPass + "');";
 
-    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
+    if (sqlite3_exec(db, insertSql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
         cout << RED << "Error: " << errMsg << RESET << endl;
         sqlite3_free(errMsg);
     } else {
@@ -75,12 +104,13 @@ void ComplaintBox::registerUser(bool isAdmin) {
     }
 }
 
+
 bool ComplaintBox::loginUser(bool isAdmin) {
     string uname, pass;
     cout << CYAN << "Enter username: " << RESET;
     cin >> uname;
     cout << CYAN << "Enter password: " << RESET;
-    cin >> pass;
+    pass = getHiddenPassword();    
 
     string table = isAdmin ? "adminusers" : "users";
     string hashedPass = hashPassword(pass);
