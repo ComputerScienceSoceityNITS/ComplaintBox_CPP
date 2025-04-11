@@ -51,12 +51,12 @@ void ComplaintBox::createTables() {
     string sqlUsers = "CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT);";
     string sqlAdmins = "CREATE TABLE IF NOT EXISTS adminusers (username TEXT PRIMARY KEY, password TEXT);";
     string sqlComplaints = "CREATE TABLE IF NOT EXISTS complaints ("
-                            "complaint_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            "category TEXT, "
-                            "subCategory TEXT, "
-                            "message TEXT, "
-                            "status TEXT DEFAULT 'Pending');";
-
+    "complaint_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+    "category TEXT, "
+    "subCategory TEXT, "
+    "message TEXT, "
+    "status TEXT DEFAULT 'Pending', "
+    "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);";
 
     sqlite3_exec(db, sqlUsers.c_str(), 0, 0, &errMsg);
     sqlite3_exec(db, sqlAdmins.c_str(), 0, 0, &errMsg);
@@ -155,15 +155,17 @@ void ComplaintBox::fileComplaint() {
     }
 }
 
+
 void ComplaintBox::exportComplaintsToCSV() {
     ofstream file("complaints_export.csv");
     if (!file.is_open()) {
         cout << RED << "Failed to create CSV file.\n" << RESET;
         return;
     }
-    
-    file << "complaint_id,category,subCategory,message,status\n"; 
-    string sql = "SELECT complaint_id, category, subCategory, message, status FROM complaints;";
+
+    file << "complaint_id,category,subCategory,message,status,timestamp\n";  // Include timestamp in header
+    string sql = "SELECT complaint_id, category, subCategory, message, status, timestamp FROM complaints;";  // Include timestamp
+
     auto callback = [](void *data, int argc, char **argv, char **colName) -> int {
         ofstream *f = static_cast<ofstream *>(data);
         for (int i = 0; i < argc; i++) {
@@ -171,14 +173,14 @@ void ComplaintBox::exportComplaintsToCSV() {
         }
         return 0;
     };
-    
+
     if (sqlite3_exec(db, sql.c_str(), callback, &file, &errMsg) != SQLITE_OK) {
         cout << RED << "Export failed: " << errMsg << RESET << endl;
         sqlite3_free(errMsg);
     } else {
-        cout << BOLDGREEN << "Complaints exported to 'complaints_export.csv'!\n" << RESET;
+        cout << BOLDGREEN << "Complaints exported to 'complaints_export.csv' with timestamp!\n" << RESET;
     }
-    
+
     file.close();
 }
 
