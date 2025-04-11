@@ -45,17 +45,21 @@ int main() {
             case 7:
                 cb.searchComplaints();
                 break;
-            case 8: {
-                int id;
-                string status;
-                cout << YELLOW << "Enter Complaint ID to update: " << RESET;
-                cin >> id;
-                cout << YELLOW << "Enter new status (Pending/In Progress/Resolved): " << RESET;
-                cin.ignore();
-                getline(cin, status);
-                cb.updateComplaintStatus(id, status);
-                break;
-            }
+            case 8:
+                if (!cb.isAdminLoggedIn()) {
+                    cout << RED << "Only admins can update complaint status. Please login as admin first.\n" << RESET;
+                    break;
+                } else {
+                    int id;
+                    string status;
+                    cout << YELLOW << "Enter Complaint ID to update: " << RESET;
+                    cin >> id;
+                    cin.ignore();
+                    cout << YELLOW << "Enter new status (Pending/In Progress/Resolved): " << RESET;
+                    getline(cin, status);
+                    cb.updateComplaintStatus(id, status);
+                    break;
+                }      
             case 9:
                 cout << BOLDGREEN << "Exiting..." << RESET << endl;
                 break;

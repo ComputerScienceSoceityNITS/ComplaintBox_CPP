@@ -26,11 +26,13 @@ public:
     void fileComplaint();
     void exportComplaintsToCSV();
     void searchComplaints();
-    void updateComplaintStatus(int complaint_id, const std::string& new_status);
+    void updateComplaintStatus(int complaint_id, const string& new_status);
+    bool isAdminLoggedIn() const { return admin_logged_in; }
 
 private:
     sqlite3 *db;
     char *errMsg;
+    bool admin_logged_in = false;
     void createTables();
 };
 

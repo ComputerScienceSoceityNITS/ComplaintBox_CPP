@@ -79,12 +79,14 @@ bool ComplaintBox::loginUser(bool isAdmin) {
 
     if (success) {
         cout << GREEN << "Login successful!\n" << RESET;
+        admin_logged_in = isAdmin;  
         return true;
     } else {
         cout << RED << "Invalid credentials!\n" << RESET;
         return false;
     }
 }
+
 
 void ComplaintBox::fileComplaint() {
     string category, subCategory, message;
@@ -163,8 +165,13 @@ void ComplaintBox::searchComplaints() {
 
 
 void ComplaintBox::updateComplaintStatus(int complaint_id, const std::string& new_status) {
+    if (!admin_logged_in) {
+        cout << RED << "Only admins can update complaint status.\n" << RESET;
+        return;
+    }
+
     sqlite3_stmt* stmt;
-    std::string sql = "UPDATE complaints SET status = ? WHERE complaint_id = ?";
+    string sql = "UPDATE complaints SET status = ? WHERE complaint_id = ?";
 
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
         sqlite3_bind_text(stmt, 1, new_status.c_str(), -1, SQLITE_STATIC);
@@ -178,5 +185,6 @@ void ComplaintBox::updateComplaintStatus(int complaint_id, const std::string& ne
     } else {
         cerr << RED << "SQL Prepare Failed: " << sqlite3_errmsg(db) << "\n" << RESET;
     }
+
     sqlite3_finalize(stmt);
 }
