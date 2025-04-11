@@ -185,15 +185,20 @@ void ComplaintBox::fileComplaint() {
 
 
 void ComplaintBox::exportComplaintsToCSV() {
+    if (!admin_logged_in) {
+        cout << RED << "Only admins are allowed to export complaints.\n" << RESET;
+        return;
+    }
+
     ofstream file("complaints_export.csv");
     if (!file.is_open()) {
         cout << RED << "Failed to create CSV file.\n" << RESET;
         return;
     }
 
-    file << "complaint_id,filed_by,category,subCategory,message,status,timestamp\n"; 
+    file << "complaint_id,filed_by,category,subCategory,message,status,timestamp\n";
 
-    string sql = "SELECT complaint_id, filed_by, category, subCategory, message, status, timestamp FROM complaints;"; // Updated SQL
+    string sql = "SELECT complaint_id, filed_by, category, subCategory, message, status, timestamp FROM complaints;";
 
     auto callback = [](void *data, int argc, char **argv, char **colName) -> int {
         ofstream *f = static_cast<ofstream *>(data);
@@ -207,11 +212,12 @@ void ComplaintBox::exportComplaintsToCSV() {
         cout << RED << "Export failed: " << errMsg << RESET << endl;
         sqlite3_free(errMsg);
     } else {
-        cout << BOLDGREEN << "Complaints exported to 'complaints_export.csv' with filed_by and timestamp!\n" << RESET;
+        cout << BOLDGREEN << "Complaints exported to 'complaints_export.csv'\n" << RESET;
     }
 
     file.close();
 }
+
 
 
 void ComplaintBox::searchComplaints() {
