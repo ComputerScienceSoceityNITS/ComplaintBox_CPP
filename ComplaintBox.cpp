@@ -79,6 +79,21 @@ bool ComplaintBox::loginUser(bool isAdmin) {
 
     if (success) {
         cout << GREEN << "Login successful!\n" << RESET;
+        string fetchSql = "SELECT category, subCategory, message FROM complaints WHERE username = '" + uname + "';";
+        cout << "\nYour Complaints:\n";
+        bool found = false;
+
+        sqlite3_exec(db, fetchSql.c_str(), [](void* foundPtr, int argc, char** argv, char** colName) -> int {
+            *(bool*)foundPtr = true;
+            cout << "\nCategory: " << argv[0]
+                 << "\nSub-category: " << argv[1]
+                 << "\nMessage: " << argv[2] << "\n";
+            return 0;
+        }, &found, &errMsg);
+
+        if (!found) {
+            cout << "No complaints found.\n";
+        }
         return true;
     } else {
         cout << RED << "Invalid credentials!\n" << RESET;
