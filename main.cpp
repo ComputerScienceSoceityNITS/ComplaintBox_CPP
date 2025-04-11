@@ -1,11 +1,12 @@
+// g++ main.cpp ComplaintBox.cpp -lssl -lcrypto -lsqlite3 -o complaintbox
+
 #include <bits/stdc++.h>
 #include "ComplaintBox.h"
 using namespace std;
 
 int main() {
     ComplaintBox cb;
-    string choice;
-    int choiceNum = 0;
+    int choice = 0;
 
     do {
         cout << BOLDVIOLET << "\n==== Complaint Box Menu ====\n" << RESET;

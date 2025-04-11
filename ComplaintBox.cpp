@@ -3,8 +3,21 @@
 #include <fstream>
 #include <sstream>
 #include <bits/stdc++.h> 
+#include <openssl/sha.h>
 
 using namespace std;
+
+string hashPassword(const string& password) {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256((const unsigned char*)password.c_str(), password.size(), hash);
+
+    stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
+        ss << hex << setw(2) << setfill('0') << (int)hash[i];
+
+    return ss.str();
+}
+
 
 ComplaintBox::ComplaintBox() {
     sqlite3_open("complaints.db", &db);
@@ -51,7 +64,8 @@ void ComplaintBox::registerUser(bool isAdmin) {
     cin >> pass;
 
     string table = isAdmin ? "adminusers" : "users";
-    string sql = "INSERT INTO " + table + " (username, password) VALUES ('" + uname + "', '" + pass + "');";
+    string hashedPass = hashPassword(pass);
+    string sql = "INSERT INTO " + table + " (username, password) VALUES ('" + uname + "', '" + hashedPass + "');";       
 
     if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
         cout << RED << "Error: " << errMsg << RESET << endl;
@@ -69,7 +83,9 @@ bool ComplaintBox::loginUser(bool isAdmin) {
     cin >> pass;
 
     string table = isAdmin ? "adminusers" : "users";
-    string sql = "SELECT * FROM " + table + " WHERE username = '" + uname + "' AND password = '" + pass + "';";
+    string hashedPass = hashPassword(pass);
+    string sql = "SELECT * FROM " + table + " WHERE username = '" + uname + "' AND password = '" + hashedPass + "';";
+    
     bool success = false;
 
     sqlite3_exec(db, sql.c_str(), [](void *successPtr, int, char **, char **) -> int {
