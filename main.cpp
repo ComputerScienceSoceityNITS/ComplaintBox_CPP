@@ -4,8 +4,7 @@ using namespace std;
 
 int main() {
     ComplaintBox cb;
-    string choice;
-    int choiceNum = 0;
+    int choice = 0;
 
     do {
         cout << BOLDVIOLET << "\n==== Complaint Box Menu ====\n" << RESET;
@@ -24,55 +23,50 @@ int main() {
         cout << WHITE << "Choice: " << RESET;
         cin >> choice;
 
-        try {
-            choiceNum = stoi(choice);
-            switch (choiceNum) {
-                case 1:
-                    cb.registerUser();
+        switch (choice) {
+            case 1:
+                cb.registerUser();
+                break;
+            case 2:
+                cb.registerUser(true);
+                break;
+            case 3:
+                cb.loginUser();
+                break;
+            case 4:
+                cb.loginUser(true);
+                break;
+            case 5:
+                cb.fileComplaint();
+                break;
+            case 6:
+                cb.exportComplaintsToCSV();
+                break;
+            case 7:
+                cb.searchComplaints();
+                break;
+            case 8:
+                if (!cb.isAdminLoggedIn()) {
+                    cout << RED << "Only admins can update complaint status. Please login as admin first.\n" << RESET;
                     break;
-                case 2:
-                    cb.registerUser(true);
+                } else {
+                    int id;
+                    string status;
+                    cout << YELLOW << "Enter Complaint ID to update: " << RESET;
+                    cin >> id;
+                    cin.ignore();
+                    cout << YELLOW << "Enter new status (Pending/In Progress/Resolved): " << RESET;
+                    getline(cin, status);
+                    cb.updateComplaintStatus(id, status);
                     break;
-                case 3:
-                    cb.loginUser();
-                    break;
-                case 4:
-                    cb.loginUser(true);
-                    break;
-                case 5:
-                    cb.fileComplaint();
-                    break;
-                case 6:
-                    cb.exportComplaintsToCSV();
-                    break;
-                case 7:
-                    cb.searchComplaints();
-                    break;
-                case 8:
-                    if (!cb.isAdminLoggedIn()) {
-                        cout << RED << "Only admins can update complaint status. Please login as admin first.\n" << RESET;
-                    } else {
-                        int id;
-                        string status;
-                        cout << YELLOW << "Enter Complaint ID to update: " << RESET;
-                        cin >> id;
-                        cin.ignore();
-                        cout << YELLOW << "Enter new status (Pending/In Progress/Resolved): " << RESET;
-                        getline(cin, status);
-                        cb.updateComplaintStatus(id, status);
-                    }
-                    break;
-                case 9:
-                    cout << BOLDGREEN << "Exiting..." << RESET << endl;
-                    break;
-                default:
-                    cout << BOLDRED << "Invalid choice!\n" << RESET;
-            }
-        } catch (exception& e) {
-            cout << RED << "Invalid input! Please enter a number.\n" << RESET;
+                }      
+            case 9:
+                cout << BOLDGREEN << "Exiting..." << RESET << endl;
+                break;
+            default:
+                cout << BOLDRED << "Invalid choice!\n" << RESET;
         }
-
-    } while (choiceNum != 9);
+    } while (choice != 9);
 
     return 0;
 }
