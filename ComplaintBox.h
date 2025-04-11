@@ -26,6 +26,7 @@ public:
     void fileComplaint();
     void exportComplaintsToCSV();
     void searchComplaints();
+    void updateComplaintStatus(int complaint_id, const std::string& new_status);
 
 private:
     sqlite3 *db;
