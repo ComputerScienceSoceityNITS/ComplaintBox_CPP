@@ -149,6 +149,7 @@ bool ComplaintBox::loginUser(bool isAdmin) {
             } else {
                 cout << GREEN << "No new complaints since your last login.\n" << RESET;
             }
+            showDashboardSummary();
         }
 
         return true;
@@ -363,4 +364,38 @@ void ComplaintBox::deleteComplaint() {
         cout << RED << "Delete failed: " << errMsg << RESET << endl;
         sqlite3_free(errMsg);
     }
+}
+
+void ComplaintBox::showDashboardSummary() {
+    if (!admin_logged_in) {
+        cout << RED << "Only admins can view dashboard summary.\n" << RESET;
+        return;
+    }
+
+    struct StatusCount {
+        int total = 0;
+        int pending = 0;
+        int inProgress = 0;
+        int resolved = 0;
+    } counts;
+
+    string sql = "SELECT status, COUNT(*) FROM complaints GROUP BY status;";
+    sqlite3_exec(db, sql.c_str(), [](void* data, int argc, char** argv, char**) -> int {
+        StatusCount* c = static_cast<StatusCount*>(data);
+        string status = argv[0] ? argv[0] : "";
+        int count = argv[1] ? atoi(argv[1]) : 0;
+
+        c->total += count;
+        if (status == "Pending") c->pending = count;
+        else if (status == "In Progress") c->inProgress = count;
+        else if (status == "Resolved") c->resolved = count;
+
+        return 0;
+    }, &counts, &errMsg);
+
+    cout << BOLDVIOLET << "\nComplaint Summary Dashboard\n" << RESET;
+    cout << WHITE << "Total Complaints: " << BOLDGREEN << counts.total << RESET << endl;
+    cout << WHITE << "Pending: " << YELLOW << counts.pending << RESET << endl;
+    cout << WHITE << "In Progress: " << PURPLE << counts.inProgress << RESET << endl;
+    cout << WHITE << "Resolved: " << GREEN << counts.resolved << RESET << endl;
 }

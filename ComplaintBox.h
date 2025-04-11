@@ -31,8 +31,8 @@ public:
     void viewMyComplaints();
     void editComplaint();
     void deleteComplaint();
+    void showDashboardSummary();
         
-
 private:
     sqlite3 *db;
     char *errMsg;
