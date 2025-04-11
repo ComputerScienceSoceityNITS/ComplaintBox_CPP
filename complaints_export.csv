@@ -1,4 +1,3 @@
-complaint_id,category,subCategory,message
-1,Infrastructural,Hostel,Washrooms are not being regularly cleaned.
-2,Management,College Events,Admin paisa kha gaya bc
-3,Infrastructure,Hostel,MMC change karo mc
+complaint_id,category,subCategory,message,status
+1,Infrastructure,Fests,Admin paisa kha gaya bc,Pending
+2,Hostel,Mess,MMC badlo mc,Pending
