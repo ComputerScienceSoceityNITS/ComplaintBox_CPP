@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <bits/stdc++.h> 
+#include <sqlite3.h>
 
 using namespace std;
 
@@ -16,17 +17,17 @@ ComplaintBox::~ComplaintBox() {
 }
 
 void ComplaintBox::createTables() {
-    string sqlUsers = "CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT);";
-    string sqlAdmins = "CREATE TABLE IF NOT EXISTS adminusers (username TEXT PRIMARY KEY, password TEXT);";
-    string sqlComplaints = "CREATE TABLE IF NOT EXISTS complaints ("
-                           "complaint_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                           "category TEXT, "
-                           "subCategory TEXT, "
-                           "message TEXT);";
+    const char* sqlUsers = "CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT);";
+    const char* sqlAdmins = "CREATE TABLE IF NOT EXISTS adminusers (username TEXT PRIMARY KEY, password TEXT);";
+    const char* sqlComplaints = "CREATE TABLE IF NOT EXISTS complaints ("
+                                "complaint_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                                "category TEXT, "
+                                "subCategory TEXT, "
+                                "message TEXT);";
 
-    sqlite3_exec(db, sqlUsers.c_str(), 0, 0, &errMsg);
-    sqlite3_exec(db, sqlAdmins.c_str(), 0, 0, &errMsg);
-    sqlite3_exec(db, sqlComplaints.c_str(), 0, 0, &errMsg);
+    sqlite3_exec(db, sqlUsers, 0, 0, &errMsg);
+    sqlite3_exec(db, sqlAdmins, 0, 0, &errMsg);
+    sqlite3_exec(db, sqlComplaints, 0, 0, &errMsg);
 }
 
 void ComplaintBox::registerUser(bool isAdmin) {
@@ -34,13 +35,14 @@ void ComplaintBox::registerUser(bool isAdmin) {
     cout << PURPLE << "Enter username: " << RESET;
     cin >> uname;
 
-    string checkSql = "SELECT * FROM users WHERE username='" + uname + "';";
-    bool exists = false;
+    sqlite3_stmt* stmt;
+    string checkSql = "SELECT 1 FROM users WHERE username = ?";
+    sqlite3_prepare_v2(db, checkSql.c_str(), -1, &stmt, 0);
+    sqlite3_bind_text(stmt, 1, uname.c_str(), -1, SQLITE_STATIC);
 
-    sqlite3_exec(db, checkSql.c_str(), [](void *data, int, char **, char **) -> int {
-        *(bool *)data = true;
-        return 0;
-    }, &exists, &errMsg);
+    bool exists = false;
+    if (sqlite3_step(stmt) == SQLITE_ROW) exists = true;
+    sqlite3_finalize(stmt);
 
     if (exists) {
         cout << BOLDRED << "Username already exists. Please choose a different Username.\n" << RESET;
@@ -51,14 +53,18 @@ void ComplaintBox::registerUser(bool isAdmin) {
     cin >> pass;
 
     string table = isAdmin ? "adminusers" : "users";
-    string sql = "INSERT INTO " + table + " (username, password) VALUES ('" + uname + "', '" + pass + "');";
+    string insertSql = "INSERT INTO " + table + " (username, password) VALUES (?, ?);";
 
-    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
-        cout << RED << "Error: " << errMsg << RESET << endl;
-        sqlite3_free(errMsg);
+    sqlite3_prepare_v2(db, insertSql.c_str(), -1, &stmt, 0);
+    sqlite3_bind_text(stmt, 1, uname.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, pass.c_str(), -1, SQLITE_STATIC);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        cout << RED << "Error: " << sqlite3_errmsg(db) << RESET << endl;
     } else {
         cout << BOLDGREEN << "Registration successful!\n" << RESET;
     }
+    sqlite3_finalize(stmt);
 }
 
 bool ComplaintBox::loginUser(bool isAdmin) {
@@ -69,13 +75,16 @@ bool ComplaintBox::loginUser(bool isAdmin) {
     cin >> pass;
 
     string table = isAdmin ? "adminusers" : "users";
-    string sql = "SELECT * FROM " + table + " WHERE username = '" + uname + "' AND password = '" + pass + "';";
-    bool success = false;
+    string sql = "SELECT 1 FROM " + table + " WHERE username = ? AND password = ?;";
 
-    sqlite3_exec(db, sql.c_str(), [](void *successPtr, int, char **, char **) -> int {
-        *(bool*)successPtr = true;
-        return 0;
-    }, &success, &errMsg);
+    sqlite3_stmt* stmt;
+    sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, 0);
+    sqlite3_bind_text(stmt, 1, uname.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, pass.c_str(), -1, SQLITE_STATIC);
+
+    bool success = false;
+    if (sqlite3_step(stmt) == SQLITE_ROW) success = true;
+    sqlite3_finalize(stmt);
 
     if (success) {
         cout << GREEN << "Login successful!\n" << RESET;
@@ -96,13 +105,19 @@ void ComplaintBox::fileComplaint() {
     cout << YELLOW << "Enter complaint message: " << RESET;
     getline(cin, message);
 
-    string sql = "INSERT INTO complaints (category, subCategory, message) VALUES ('" + category + "', '" + subCategory + "', '" + message + "');";
-    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
-        cout << RED << "Error: " << errMsg << RESET << endl;
-        sqlite3_free(errMsg);
+    sqlite3_stmt* stmt;
+    string sql = "INSERT INTO complaints (category, subCategory, message) VALUES (?, ?, ?);";
+    sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, 0);
+    sqlite3_bind_text(stmt, 1, category.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, subCategory.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, message.c_str(), -1, SQLITE_STATIC);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        cout << RED << "Error: " << sqlite3_errmsg(db) << RESET << endl;
     } else {
         cout << BOLDGREEN << "Complaint filed successfully!\n" << RESET;
     }
+    sqlite3_finalize(stmt);
 }
 
 void ComplaintBox::exportComplaintsToCSV() {
@@ -111,8 +126,8 @@ void ComplaintBox::exportComplaintsToCSV() {
         cout << RED << "Failed to create CSV file.\n" << RESET;
         return;
     }
-    
-    file << "complaint_id,category,subCategory,message\n"; 
+
+    file << "complaint_id,category,subCategory,message\n";
     string sql = "SELECT complaint_id, category, subCategory, message FROM complaints;";
     auto callback = [](void *data, int argc, char **argv, char **colName) -> int {
         ofstream *f = static_cast<ofstream *>(data);
@@ -121,14 +136,14 @@ void ComplaintBox::exportComplaintsToCSV() {
         }
         return 0;
     };
-    
+
     if (sqlite3_exec(db, sql.c_str(), callback, &file, &errMsg) != SQLITE_OK) {
         cout << RED << "Export failed: " << errMsg << RESET << endl;
         sqlite3_free(errMsg);
     } else {
         cout << BOLDGREEN << "Complaints exported to 'complaints_export.csv'!\n" << RESET;
     }
-    
+
     file.close();
 }
 
@@ -139,21 +154,21 @@ void ComplaintBox::searchComplaints() {
     getline(cin, keyword);
 
     string sql = "SELECT complaint_id, category, subCategory, message FROM complaints "
-                 "WHERE category LIKE '%" + keyword + "%' OR "
-                 "subCategory LIKE '%" + keyword + "%' OR "
-                 "message LIKE '%" + keyword + "%';";
-    
-    cout << CYAN << "\nSearch Results:\n" << RESET;
-    auto callback = [](void *data, int argc, char **argv, char **colName) -> int {
-        for (int i = 0; i < argc; i++) {
-            cout << (colName[i] ? colName[i] : "") << ": " << (argv[i] ? argv[i] : "NULL") << "  ";
-        }
-        cout << "\n";
-        return 0;
-    };
+                 "WHERE category LIKE ? OR subCategory LIKE ? OR message LIKE ?;";
+    sqlite3_stmt* stmt;
+    sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, 0);
 
-    if (sqlite3_exec(db, sql.c_str(), callback, 0, &errMsg) != SQLITE_OK) {
-        cout << RED << "Search failed: " << errMsg << RESET << endl;
-        sqlite3_free(errMsg);
+    string pattern = "%" + keyword + "%";
+    for (int i = 1; i <= 3; ++i) {
+        sqlite3_bind_text(stmt, i, pattern.c_str(), -1, SQLITE_STATIC);
     }
+
+    cout << CYAN << "\nSearch Results:\n" << RESET;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        cout << "complaint_id: " << sqlite3_column_text(stmt, 0) << "  "
+             << "category: " << sqlite3_column_text(stmt, 1) << "  "
+             << "subCategory: " << sqlite3_column_text(stmt, 2) << "  "
+             << "message: " << sqlite3_column_text(stmt, 3) << endl;
+    }
+    sqlite3_finalize(stmt);
 }
