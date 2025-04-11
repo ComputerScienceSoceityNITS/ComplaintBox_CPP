@@ -2,6 +2,8 @@
 
 #include <bits/stdc++.h>
 #include "ComplaintBox.h"
+#include "globals.h"
+
 using namespace std;
 
 int main() {

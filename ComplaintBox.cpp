@@ -5,6 +5,10 @@
 #include <bits/stdc++.h> 
 #include <openssl/sha.h>
 #include <conio.h>
+#include "globals.h"
+
+
+std::string logged_in_username = "random";
 
 using namespace std;
 
@@ -127,6 +131,7 @@ bool ComplaintBox::loginUser(bool isAdmin) {
     if (success) {
         cout << GREEN << "Login successful!\n" << RESET;
         admin_logged_in = isAdmin;
+        logged_in_username = uname;
 
         if (isAdmin) {
             const char* countSQL = "SELECT COUNT(*) FROM complaints WHERE notified = 0;";
@@ -164,16 +169,19 @@ void ComplaintBox::fileComplaint() {
     cout << YELLOW << "Enter complaint message: " << RESET;
     getline(cin, message);
 
-    string sql = "INSERT INTO complaints (category, subCategory, message, status) VALUES ('" 
-                + category + "', '" + subCategory + "', '" + message + "', 'Pending');";
+    string filedBy = logged_in_username.empty() ? "random" : logged_in_username;
+
+    string sql = "INSERT INTO complaints (category, subCategory, message, status, filed_by) VALUES ('" 
+                 + category + "', '" + subCategory + "', '" + message + "', 'Pending', '" + filedBy + "');";
 
     if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
         cout << RED << "Error: " << errMsg << RESET << endl;
         sqlite3_free(errMsg);
     } else {
-        cout << BOLDGREEN << "Complaint filed successfully with status 'Pending'!\n" << RESET;
+        cout << BOLDGREEN << "Complaint filed successfully by '" << filedBy << "' with status 'Pending'!\n" << RESET;
     }
 }
+
 
 
 void ComplaintBox::exportComplaintsToCSV() {
@@ -183,8 +191,9 @@ void ComplaintBox::exportComplaintsToCSV() {
         return;
     }
 
-    file << "complaint_id,category,subCategory,message,status,timestamp\n";  // Include timestamp in header
-    string sql = "SELECT complaint_id, category, subCategory, message, status, timestamp FROM complaints;";  // Include timestamp
+    file << "complaint_id,filed_by,category,subCategory,message,status,timestamp\n"; 
+
+    string sql = "SELECT complaint_id, filed_by, category, subCategory, message, status, timestamp FROM complaints;"; // Updated SQL
 
     auto callback = [](void *data, int argc, char **argv, char **colName) -> int {
         ofstream *f = static_cast<ofstream *>(data);
@@ -198,11 +207,12 @@ void ComplaintBox::exportComplaintsToCSV() {
         cout << RED << "Export failed: " << errMsg << RESET << endl;
         sqlite3_free(errMsg);
     } else {
-        cout << BOLDGREEN << "Complaints exported to 'complaints_export.csv' with timestamp!\n" << RESET;
+        cout << BOLDGREEN << "Complaints exported to 'complaints_export.csv' with filed_by and timestamp!\n" << RESET;
     }
 
     file.close();
 }
+
 
 void ComplaintBox::searchComplaints() {
     string keyword;
