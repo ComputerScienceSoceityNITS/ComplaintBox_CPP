@@ -28,6 +28,10 @@ public:
     void searchComplaints();
     void updateComplaintStatus(int complaint_id, const string& new_status);
     bool isAdminLoggedIn() const { return admin_logged_in; }
+    void viewMyComplaints();
+    void editComplaint();
+    void deleteComplaint();
+        
 
 private:
     sqlite3 *db;

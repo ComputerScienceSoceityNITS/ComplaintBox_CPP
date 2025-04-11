@@ -272,3 +272,95 @@ void ComplaintBox::updateComplaintStatus(int complaint_id, const std::string& ne
 
     sqlite3_finalize(stmt);
 }
+
+void ComplaintBox::viewMyComplaints() {
+    if (logged_in_username.empty()) {
+        cout << RED << "Please log in to view your complaints.\n" << RESET;
+        return;
+    }
+
+    string sql = "SELECT complaint_id, category, subCategory, message, status, timestamp FROM complaints WHERE filed_by = '" + logged_in_username + "';";
+
+    cout << BOLDGREEN << "Your Complaints:\n" << RESET;
+
+    auto callback = [](void* unused, int argc, char** argv, char** colName) -> int {
+        cout << "\nComplaint ID: " << argv[0]
+             << "\nCategory: " << argv[1]
+             << "\nSub-category: " << argv[2]
+             << "\nMessage: " << argv[3]
+             << "\nStatus: " << argv[4]
+             << "\nTimestamp: " << argv[5] << "\n";
+        return 0;
+    };
+
+    if (sqlite3_exec(db, sql.c_str(), callback, 0, &errMsg) != SQLITE_OK) {
+        cout << RED << "Failed to fetch complaints: " << errMsg << RESET << endl;
+        sqlite3_free(errMsg);
+    }
+}
+
+void ComplaintBox::editComplaint() {
+    int id;
+    cout << CYAN << "Enter Complaint ID to edit: " << RESET;
+    cin >> id;
+    cin.ignore();
+
+    string sql = "SELECT status FROM complaints WHERE complaint_id = " + to_string(id) + " AND filed_by = '" + logged_in_username + "';";
+    string status;
+    bool found = false;
+
+    sqlite3_exec(db, sql.c_str(), [](void* s, int argc, char** argv, char**) -> int {
+        if (argc > 0 && argv[0]) {
+            *(string*)s = argv[0];
+        }
+        return 0;
+    }, &status, &errMsg);
+
+    if (status != "Pending") {
+        cout << RED << "You can only edit complaints in 'Pending' status.\n" << RESET;
+        return;
+    }
+
+    string newMsg;
+    cout << YELLOW << "Enter new complaint message: " << RESET;
+    getline(cin, newMsg);
+
+    sql = "UPDATE complaints SET message = '" + newMsg + "' WHERE complaint_id = " + to_string(id) + " AND filed_by = '" + logged_in_username + "';";
+
+    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) == SQLITE_OK) {
+        cout << GREEN << "Complaint updated successfully.\n" << RESET;
+    } else {
+        cout << RED << "Update failed: " << errMsg << RESET << endl;
+        sqlite3_free(errMsg);
+    }
+}
+
+void ComplaintBox::deleteComplaint() {
+    int id;
+    cout << CYAN << "Enter Complaint ID to delete: " << RESET;
+    cin >> id;
+
+    string sql = "SELECT status FROM complaints WHERE complaint_id = " + to_string(id) + " AND filed_by = '" + logged_in_username + "';";
+    string status;
+
+    sqlite3_exec(db, sql.c_str(), [](void* s, int argc, char** argv, char**) -> int {
+        if (argc > 0 && argv[0]) {
+            *(string*)s = argv[0];
+        }
+        return 0;
+    }, &status, &errMsg);
+
+    if (status != "Pending") {
+        cout << RED << "Only 'Pending' complaints can be deleted.\n" << RESET;
+        return;
+    }
+
+    sql = "DELETE FROM complaints WHERE complaint_id = " + to_string(id) + " AND filed_by = '" + logged_in_username + "';";
+    
+    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) == SQLITE_OK) {
+        cout << GREEN << "Complaint deleted successfully.\n" << RESET;
+    } else {
+        cout << RED << "Delete failed: " << errMsg << RESET << endl;
+        sqlite3_free(errMsg);
+    }
+}

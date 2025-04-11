@@ -35,7 +35,43 @@ int main() {
                 cb.registerUser(true);
                 break;
             case 3:
-                cb.loginUser();
+            if (cb.loginUser()) {
+                int userChoice = 0;
+                do {
+                    cout << BOLDVIOLET << "\n==== User Menu ====\n" << RESET;
+                    cout << CYAN
+                         << "1. File Complaint\n"
+                         << "2. View My Complaints\n"
+                         << "3. Edit My Complaint (Pending Only)\n"
+                         << "4. Delete My Complaint (Pending Only)\n"
+                         << "5. Logout\n"
+                         << RESET;
+            
+                    cout << WHITE << "Choice: " << RESET;
+                    cin >> userChoice;
+            
+                    switch (userChoice) {
+                        case 1:
+                            cb.fileComplaint();
+                            break;
+                        case 2:
+                            cb.viewMyComplaints();
+                            break;
+                        case 3:
+                            cb.editComplaint();
+                            break;
+                        case 4:
+                            cb.deleteComplaint();
+                            break;
+                        case 5:
+                            cout << BOLDGREEN << "Logging out...\n" << RESET;
+                            break;
+                        default:
+                            cout << RED << "Invalid option. Try again.\n" << RESET;
+                    }
+                } while (userChoice != 5);
+            }
+            
                 break;
             case 4:
                 cb.loginUser(true);
