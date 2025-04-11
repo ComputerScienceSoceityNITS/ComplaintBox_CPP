@@ -1,4 +1,5 @@
 #include "ComplaintBox.h"
+#include "bcrypt/BCrypt.hpp"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -50,8 +51,13 @@ void ComplaintBox::registerUser(bool isAdmin) {
     cout << PURPLE << "Enter password: " << RESET;
     cin >> pass;
 
+    // Hashing the password using bcrypt
+    string hashedPassword = BCrypt::generateHash(pass);
+
     string table = isAdmin ? "adminusers" : "users";
-    string sql = "INSERT INTO " + table + " (username, password) VALUES ('" + uname + "', '" + pass + "');";
+    string sql = "INSERT INTO " + table + " (username, password) VALUES ('" + uname + "', '" + hashedPassword + "');";
+
+
 
     if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
         cout << RED << "Error: " << errMsg << RESET << endl;
@@ -69,13 +75,21 @@ bool ComplaintBox::loginUser(bool isAdmin) {
     cin >> pass;
 
     string table = isAdmin ? "adminusers" : "users";
-    string sql = "SELECT * FROM " + table + " WHERE username = '" + uname + "' AND password = '" + pass + "';";
-    bool success = false;
+    string sql = "SELECT password FROM " + table + " WHERE username = '" + uname + "';";
+    string storedHash;
+    bool found = false;
 
-    sqlite3_exec(db, sql.c_str(), [](void *successPtr, int, char **, char **) -> int {
-        *(bool*)successPtr = true;
-        return 0;
-    }, &success, &errMsg);
+    sqlite3_exec(db, sql.c_str(), [](void *data, int argc, char **argv, char **) -> int {
+        if (argc > 0 && argv[0]) {
+            *((string*)data) = argv[0];
+            return 0;
+        }
+        return 1;
+    }, &storedHash, &errMsg);
+
+    // Validating password using bcrypt
+    bool success = BCrypt::validatePassword(pass, storedHash);
+
 
     if (success) {
         cout << GREEN << "Login successful!\n" << RESET;
