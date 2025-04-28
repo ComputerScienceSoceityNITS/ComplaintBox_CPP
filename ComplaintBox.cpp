@@ -30,10 +30,75 @@ void ComplaintBox::createTables() {
     sqlite3_exec(db, sqlComplaints, 0, 0, &errMsg);
 }
 
+bool ComplaintBox::isValidUsername(const string& uname) {
+    if (uname.length() < 3 || uname.length() > 20) {
+        cout << BOLDRED << "Username must be between 3 and 20 characters long.\n" << RESET;
+        return false;
+    }
+    for (char c : uname) {
+        if (!isalnum(c)) {
+            cout << BOLDRED << "Username can only contain alphanumeric characters.\n" << RESET;
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ComplaintBox::isValidPassword(const string& pass) {
+    if (pass.length() < 8 || pass.length() > 20) {
+        cout << BOLDRED << "Password must be between 8 and 20 characters long.\n" << RESET;
+        return false;
+    }
+    bool hasUpperLetter = false, hasLowerLetter = false, hasNumber = false, hasSpecialChar = false;
+    for (char c : pass) {
+        if (isupper(c)) hasUpperLetter = true;
+        if (islower(c)) hasLowerLetter = true;
+        if (isdigit(c)) hasNumber = true;
+        if (ispunct(c)) hasSpecialChar = true;
+    }
+    if (!(hasUpperLetter && hasLowerLetter && hasNumber && hasSpecialChar)) {
+        cout << BOLDRED << "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.\n" << RESET;
+        return false;
+    }
+    return true;
+}
+
+bool ComplaintBox::isValidCategory(const string& input) {
+    if (input.length() > 50) {
+        cout << BOLDRED << "Category or subcategory is too long. Maximum length is 50 characters.\n" << RESET;
+        return false;
+    }
+    for (char c : input) {
+        if (!isalnum(c) && c != ' ') {
+            cout << BOLDRED << "Category and subcategory can only contain alphanumeric characters and spaces.\n" << RESET;
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ComplaintBox::isValidMessage(const string& message) {
+    if (message.length() > 500) {
+        cout << BOLDRED << "Message is too long. Maximum length is 500 characters.\n" << RESET;
+        return false;
+    }
+    string dangerousChars = "'\";-<>/\\";
+    for (char c : message) {
+        if (dangerousChars.find(c) != string::npos) {
+            cout << BOLDRED << "Message contains invalid characters (e.g., single quote, double quote, semicolon).\n" << RESET;
+            return false;
+        }
+    }
+    return true;
+}
+
+
 void ComplaintBox::registerUser(bool isAdmin) {
     string uname, pass;
     cout << PURPLE << "Enter username: " << RESET;
     cin >> uname;
+	
+	if (!isValidUsername(uname)) return;
 
     sqlite3_stmt* stmt;
     string checkSql = "SELECT 1 FROM users WHERE username = ?";
@@ -51,6 +116,8 @@ void ComplaintBox::registerUser(bool isAdmin) {
 
     cout << PURPLE << "Enter password: " << RESET;
     cin >> pass;
+	
+	if (!isValidPassword(pass)) return;
 
     string table = isAdmin ? "adminusers" : "users";
     string insertSql = "INSERT INTO " + table + " (username, password) VALUES (?, ?);";
@@ -104,6 +171,8 @@ void ComplaintBox::fileComplaint() {
     getline(cin, subCategory);
     cout << YELLOW << "Enter complaint message: " << RESET;
     getline(cin, message);
+	
+	if (!isValidCategory(category) || !isValidCategory(subCategory) || !isValidMessage(message)) return;
 
     sqlite3_stmt* stmt;
     string sql = "INSERT INTO complaints (category, subCategory, message) VALUES (?, ?, ?);";
